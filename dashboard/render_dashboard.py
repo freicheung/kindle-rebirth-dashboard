@@ -339,7 +339,7 @@ def draw_agenda(
 
 
 def draw_notes(draw: ImageDraw.ImageDraw, y: int, notes: list[str]) -> int:
-    section_title(draw, y, "备忘", "编辑 notes.md 即同步")
+    section_title(draw, y, "备忘")
     row_y = y + 68
     if not notes:
         draw.text((55, row_y + 10), "notes.md 目前为空", fill=MID, font=font(30, True))
