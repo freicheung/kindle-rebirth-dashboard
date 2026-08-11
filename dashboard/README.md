@@ -6,7 +6,7 @@ The renderer creates an exact 1072×1448 8-bit grayscale PNG for Kindle Paperwhi
 
 - Weather: Open-Meteo, Shanghai Pudong and Guildford, Surrey
 - Clocks: Shanghai, Los Angeles and London, calculated with IANA time zones
-- Calendar: iCloud public calendar URL stored as the `ICAL_URL` GitHub Actions secret
+- Calendar: iCloud public calendar URL stored as the `ICAL_URL` GitHub Actions secret; timed events are displayed in Shanghai time
 - Notes: edit `dashboard/notes.md`
 
 ## Local preview
