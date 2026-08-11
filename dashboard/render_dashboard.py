@@ -129,7 +129,7 @@ def fetch_weather(place: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def load_calendar(display_tz: ZoneInfo, now: datetime) -> list[AgendaItem]:
+def load_calendar(calendar_tz: ZoneInfo, now: datetime) -> list[AgendaItem]:
     calendar_bytes: bytes | None = None
     calendar_file = os.environ.get("ICAL_FILE")
     calendar_url = os.environ.get("ICAL_URL")
@@ -146,7 +146,8 @@ def load_calendar(display_tz: ZoneInfo, now: datetime) -> list[AgendaItem]:
         return []
 
     cal = Calendar.from_ical(calendar_bytes)
-    range_start = datetime.combine(now.date(), time.min, tzinfo=display_tz)
+    calendar_now = now.astimezone(calendar_tz)
+    range_start = datetime.combine(calendar_now.date(), time.min, tzinfo=calendar_tz)
     range_end = range_start + timedelta(days=8)
     events = recurring_ical_events.of(cal).between(range_start, range_end)
     agenda: list[AgendaItem] = []
@@ -162,19 +163,19 @@ def load_calendar(display_tz: ZoneInfo, now: datetime) -> list[AgendaItem]:
             end_value: datetime | date = raw_end or (raw_start + timedelta(days=1))
         else:
             if raw_start.tzinfo is None:
-                raw_start = raw_start.replace(tzinfo=display_tz)
-            start_value = raw_start.astimezone(display_tz)
+                raw_start = raw_start.replace(tzinfo=calendar_tz)
+            start_value = raw_start.astimezone(calendar_tz)
             if raw_end is None:
                 raw_end = raw_start + timedelta(hours=1)
             if raw_end.tzinfo is None:
-                raw_end = raw_end.replace(tzinfo=display_tz)
-            end_value = raw_end.astimezone(display_tz)
+                raw_end = raw_end.replace(tzinfo=calendar_tz)
+            end_value = raw_end.astimezone(calendar_tz)
 
         agenda.append(AgendaItem(start_value, end_value, title, location, all_day))
 
     def sort_key(item: AgendaItem) -> datetime:
         if item.all_day:
-            return datetime.combine(item.start, time.min, tzinfo=display_tz)
+            return datetime.combine(item.start, time.min, tzinfo=calendar_tz)
         return item.start
 
     return sorted(agenda, key=sort_key)
@@ -289,11 +290,12 @@ def draw_weather(draw: ImageDraw.ImageDraw, y: int, weather_data: list[tuple[dic
     return top + card_h
 
 
-def agenda_label(item: AgendaItem, now: datetime) -> tuple[str, str]:
+def agenda_label(item: AgendaItem, now: datetime, calendar_tz: ZoneInfo) -> tuple[str, str]:
     item_date = item.start if item.all_day else item.start.date()
-    if item_date == now.date():
+    calendar_date = now.astimezone(calendar_tz).date()
+    if item_date == calendar_date:
         day = "今天"
-    elif item_date == now.date() + timedelta(days=1):
+    elif item_date == calendar_date + timedelta(days=1):
         day = "明天"
     else:
         day = f"{item_date.month}/{item_date.day} 周{WEEKDAYS[item_date.weekday()]}"
@@ -301,15 +303,21 @@ def agenda_label(item: AgendaItem, now: datetime) -> tuple[str, str]:
     return day, when
 
 
-def draw_agenda(draw: ImageDraw.ImageDraw, y: int, agenda: list[AgendaItem], now: datetime) -> int:
-    section_title(draw, y, "日程", "未来 7 天")
+def draw_agenda(
+    draw: ImageDraw.ImageDraw,
+    y: int,
+    agenda: list[AgendaItem],
+    now: datetime,
+    calendar_tz: ZoneInfo,
+) -> int:
+    section_title(draw, y, "日程", "未来 7 天 · 上海时间")
     row_y = y + 70
     if not agenda:
         draw.text((55, row_y + 28), "暂无日程，或尚未设置 ICAL_URL", fill=MID, font=font(27))
         return row_y + 92
 
     for index, item in enumerate(agenda[:6]):
-        day, when = agenda_label(item, now)
+        day, when = agenda_label(item, now, calendar_tz)
         draw.text((54, row_y + 7), day, fill=DARK, font=font(23, True))
         draw.text((54, row_y + 40), when, fill=MID, font=font(21))
         draw.line((174, row_y + 3, 174, row_y + 69), fill=BLACK if index == 0 else LIGHT, width=3)
@@ -345,19 +353,20 @@ def draw_notes(draw: ImageDraw.ImageDraw, y: int, notes: list[str]) -> int:
 def main() -> int:
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     display_tz = ZoneInfo(config["display_timezone"])
+    calendar_tz = ZoneInfo(config.get("calendar_timezone", config["display_timezone"]))
     now = datetime.now(timezone.utc).astimezone(display_tz)
 
     weather_data: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for place in config["weather"]:
         weather_data.append((place, fetch_weather(place)))
-    agenda = load_calendar(display_tz, now)
+    agenda = load_calendar(calendar_tz, now)
     notes = load_notes(ROOT / "notes.md")
 
     image = Image.new("L", (WIDTH, HEIGHT), WHITE)
     draw = ImageDraw.Draw(image)
     draw_header(draw, now, config["clocks"])
     weather_bottom = draw_weather(draw, 201, weather_data)
-    agenda_bottom = draw_agenda(draw, weather_bottom + 29, agenda, now)
+    agenda_bottom = draw_agenda(draw, weather_bottom + 29, agenda, now, calendar_tz)
     notes_y = max(1056, agenda_bottom + 18)
     draw_notes(draw, notes_y, notes)
 
