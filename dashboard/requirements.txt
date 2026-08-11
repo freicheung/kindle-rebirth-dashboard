@@ -1,0 +1,3 @@
+Pillow==12.1.1
+icalendar==6.3.2
+recurring-ical-events==3.8.0
