@@ -1,0 +1,22 @@
+{
+  "display_timezone": "America/Los_Angeles",
+  "weather": [
+    {
+      "name": "上海浦东",
+      "latitude": 31.23995,
+      "longitude": 121.50094,
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "name": "英国吉尔福德",
+      "latitude": 51.23536,
+      "longitude": -0.57427,
+      "timezone": "Europe/London"
+    }
+  ],
+  "clocks": [
+    {"name": "上海", "timezone": "Asia/Shanghai"},
+    {"name": "洛杉矶", "timezone": "America/Los_Angeles"},
+    {"name": "伦敦", "timezone": "Europe/London"}
+  ]
+}
