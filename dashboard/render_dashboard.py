@@ -229,28 +229,34 @@ def wrap_text(draw: ImageDraw.ImageDraw, text: str, max_width: int, text_font: I
 
 
 def section_title(draw: ImageDraw.ImageDraw, y: int, title: str, detail: str = "") -> None:
-    draw.text((48, y), title, fill=BLACK, font=font(34, True))
+    draw.text((48, y), title, fill=BLACK, font=font(38, True))
     if detail:
-        detail_font = font(21)
-        draw.text((WIDTH - 48 - text_width(draw, detail, detail_font), y + 9), detail, fill=MID, font=detail_font)
-    draw.line((48, y + 51, WIDTH - 48, y + 51), fill=BLACK, width=3)
+        detail_font = font(23)
+        draw.text((WIDTH - 48 - text_width(draw, detail, detail_font), y + 11), detail, fill=MID, font=detail_font)
+    draw.line((48, y + 56, WIDTH - 48, y + 56), fill=BLACK, width=3)
 
 
 def draw_header(draw: ImageDraw.ImageDraw, now: datetime, clocks: list[dict[str, str]]) -> None:
     draw.rectangle((0, 0, WIDTH, 174), fill=BLACK)
     left_date = f"{now.month}月{now.day}日"
     left_weekday = f"星期{WEEKDAYS[now.weekday()]}"
-    draw.text((46, 27), left_date, fill=WHITE, font=font(54, True))
-    draw.text((49, 98), left_weekday, fill=LIGHT, font=font(27))
+    draw.text((44, 21), left_date, fill=WHITE, font=font(58, True))
+    draw.text((48, 96), left_weekday, fill=LIGHT, font=font(30, True))
 
     start_x, cell_w = 402, 207
     for index, clock in enumerate(clocks):
         local_now = now.astimezone(ZoneInfo(clock["timezone"]))
         x = start_x + index * cell_w
-        draw.text((x, 30), clock["name"], fill=LIGHT, font=font(24))
-        draw.text((x, 72), local_now.strftime("%H:%M"), fill=WHITE, font=font(45, True))
+        draw.text((x, 19), clock["name"], fill=LIGHT, font=font(27, True))
+        draw.text((x, 58), local_now.strftime("%H:%M"), fill=WHITE, font=font(50, True))
         if index:
-            draw.line((x - 20, 28, x - 20, 141), fill=DARK, width=2)
+            draw.line((x - 20, 20, x - 20, 125), fill=DARK, width=2)
+
+    shanghai_now = now.astimezone(ZoneInfo("Asia/Shanghai"))
+    snapshot = f"时间快照 · 生成于 {shanghai_now.strftime('%H:%M')}（上海时间）"
+    snapshot_font = font(20, True)
+    snapshot_x = start_x + ((WIDTH - start_x) - text_width(draw, snapshot, snapshot_font)) // 2
+    draw.text((snapshot_x, 139), snapshot, fill=LIGHT, font=snapshot_font)
 
 
 def draw_weather(draw: ImageDraw.ImageDraw, y: int, weather_data: list[tuple[dict[str, Any], dict[str, Any]]]) -> int:
@@ -263,30 +269,30 @@ def draw_weather(draw: ImageDraw.ImageDraw, y: int, weather_data: list[tuple[dic
         current = data["current"]
         daily = data["daily"]
         condition = WEATHER_TEXT.get(int(current["weather_code"]), "未知")
-        draw.text((x + 24, top + 17), place["name"], fill=BLACK, font=font(30, True))
-        draw.text((x + 24, top + 61), f"{round(current['temperature_2m'])}°", fill=BLACK, font=font(68, True))
-        draw.text((x + 136, top + 77), condition, fill=DARK, font=font(29, True))
+        draw.text((x + 24, top + 14), place["name"], fill=BLACK, font=font(33, True))
+        draw.text((x + 22, top + 56), f"{round(current['temperature_2m'])}°", fill=BLACK, font=font(72, True))
+        draw.text((x + 143, top + 74), condition, fill=DARK, font=font(31, True))
         draw.text(
-            (x + 136, top + 118),
+            (x + 143, top + 116),
             f"体感 {round(current['apparent_temperature'])}°  湿度 {round(current['relative_humidity_2m'])}%",
             fill=MID,
-            font=font(20),
+            font=font(21, True),
         )
         draw.line((x + 22, top + 157, x + card_w - 22, top + 157), fill=LIGHT, width=2)
         day_w = (card_w - 44) // 3
         for day_index in range(1, 4):
             day_date = date.fromisoformat(daily["time"][day_index])
             dx = x + 22 + (day_index - 1) * day_w
-            draw.text((dx, top + 171), f"周{WEEKDAYS[day_date.weekday()]}", fill=DARK, font=font(21, True))
+            draw.text((dx, top + 170), f"周{WEEKDAYS[day_date.weekday()]}", fill=DARK, font=font(23, True))
             draw.text(
                 (dx, top + 205),
                 f"{round(daily['temperature_2m_max'][day_index])}°/{round(daily['temperature_2m_min'][day_index])}°",
                 fill=BLACK,
-                font=font(23, True),
+                font=font(25, True),
             )
             rain = daily["precipitation_probability_max"][day_index]
             if rain is not None and rain >= 30:
-                draw.text((dx, top + 235), f"雨 {round(rain)}%", fill=MID, font=font(18))
+                draw.text((dx, top + 235), f"雨 {round(rain)}%", fill=MID, font=font(20, True))
     return top + card_h
 
 
@@ -318,14 +324,14 @@ def draw_agenda(
 
     for index, item in enumerate(agenda[:6]):
         day, when = agenda_label(item, now, calendar_tz)
-        draw.text((54, row_y + 7), day, fill=DARK, font=font(23, True))
-        draw.text((54, row_y + 40), when, fill=MID, font=font(21))
+        draw.text((54, row_y + 5), day, fill=DARK, font=font(25, True))
+        draw.text((54, row_y + 40), when, fill=MID, font=font(23, True))
         draw.line((174, row_y + 3, 174, row_y + 69), fill=BLACK if index == 0 else LIGHT, width=3)
-        title = fit_text(draw, item.title, 805, font(27, True))
-        draw.text((197, row_y + 5), title, fill=BLACK, font=font(27, True))
+        title = fit_text(draw, item.title, 805, font(30, True))
+        draw.text((197, row_y + 3), title, fill=BLACK, font=font(30, True))
         if item.location:
-            location = fit_text(draw, item.location, 805, font(20))
-            draw.text((197, row_y + 42), location, fill=MID, font=font(20))
+            location = fit_text(draw, item.location, 805, font(22, True))
+            draw.text((197, row_y + 43), location, fill=MID, font=font(22, True))
         if index < min(len(agenda), 6) - 1:
             draw.line((48, row_y + 82, WIDTH - 48, row_y + 82), fill=LIGHT, width=2)
         row_y += 88
@@ -336,15 +342,15 @@ def draw_notes(draw: ImageDraw.ImageDraw, y: int, notes: list[str]) -> int:
     section_title(draw, y, "备忘", "编辑 notes.md 即同步")
     row_y = y + 68
     if not notes:
-        draw.text((55, row_y + 10), "notes.md 目前为空", fill=MID, font=font(27))
+        draw.text((55, row_y + 10), "notes.md 目前为空", fill=MID, font=font(30, True))
         return row_y + 55
-    body_font = font(25)
+    body_font = font(28, True)
     for note in notes[:5]:
         lines = wrap_text(draw, note, 910, body_font)[:2]
         draw.ellipse((55, row_y + 13, 66, row_y + 24), fill=BLACK)
         for line_index, line in enumerate(lines):
             draw.text((84, row_y + line_index * 33), line, fill=BLACK, font=body_font)
-        row_y += max(40, len(lines) * 33 + 8)
+        row_y += max(44, len(lines) * 37 + 8)
         if row_y > HEIGHT - 55:
             break
     return row_y
@@ -370,8 +376,9 @@ def main() -> int:
     notes_y = max(1056, agenda_bottom + 18)
     draw_notes(draw, notes_y, notes)
 
-    generated = now.strftime("更新 %m-%d %H:%M")
-    footer_font = font(18)
+    shanghai_generated = now.astimezone(ZoneInfo("Asia/Shanghai"))
+    generated = shanghai_generated.strftime("数据生成于 %m-%d %H:%M（上海时间）")
+    footer_font = font(22, True)
     draw.text((WIDTH - 48 - text_width(draw, generated, footer_font), HEIGHT - 34), generated, fill=MID, font=footer_font)
 
     output_dir = Path(os.environ.get("OUTPUT_DIR", ROOT.parent / "public"))
