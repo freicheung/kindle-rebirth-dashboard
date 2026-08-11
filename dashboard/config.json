@@ -1,5 +1,6 @@
 {
   "display_timezone": "America/Los_Angeles",
+  "calendar_timezone": "Asia/Shanghai",
   "weather": [
     {
       "name": "上海浦东",
