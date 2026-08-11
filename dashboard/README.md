@@ -26,4 +26,4 @@ Create these repository Actions secrets:
 - `ICAL_URL`: the iCloud public calendar URL (`webcal://` or `https://`)
 - `DASHBOARD_SLUG`: a long random URL path, for example 24 random hexadecimal characters
 
-Set Pages source to **GitHub Actions**. The workflow renders every 15 minutes and after changes under `dashboard/`.
+Set Pages source to **GitHub Actions**. The workflow renders hourly at minute 50 and after changes under `dashboard/`.
